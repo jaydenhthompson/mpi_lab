@@ -1,8 +1,8 @@
 CC = mpic++ 
 SRCS = ./src/*.cpp
 INC = ./src/
-OPTS = -std=c++17 -Wall -Werror -O3
-DEBUG_OPTS = -std=c++17 -Wall -Werror -g
+OPTS = -std=c++17 -Wall -Werror -O3 -lglfw3 -lGL -lX11 -lXrandr -lXi -ldl -lpthread
+DEBUG_OPTS = -std=c++17 -Wall -Werror -g -lglfw3 -lGL -lX11 -lXrandr -lXi -ldl -lpthread
 
 EXEC = bin/barnes_hut
 
