@@ -1,4 +1,5 @@
-#include "argparse.h"
+#include "argparse.hpp"
+#include "quadtree.hpp"
 
 #include <mpi.h>
 #include <iostream>
