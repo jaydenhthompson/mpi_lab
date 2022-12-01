@@ -2,6 +2,16 @@
 
 #include <iostream>
 
+void body::readIn(std::ifstream &in)
+{
+    in >> this->bodyIndex;
+    in >> this->x;
+    in >> this->y;
+    in >> this->mass;
+    in >> this->vx;
+    in >> this->vy;
+}
+
 std::tuple<double, double> window::getCenter()
 {
     double x = (x_max + x_min) / 2.0;
@@ -58,14 +68,35 @@ void quadtree::addNode(node *cur, body *b)
     std::tie(x_cen, y_cen) = cur->self_window->getCenter();
 
     node **next = nullptr;
+    window * newWind = nullptr;
+    auto curWindow = cur->self_window;
+
+    auto avgX = [](window *w)
+    { return (w->x_max + w->x_min) / 2.0; };
+    
+    auto avgY = [](window *w)
+    { return (w->y_max + w->y_min) / 2.0; };
+
     if (b->x < x_cen && b->y < y_cen)
+    {
         next = &cur->sw;
+        newWind = new window(curWindow->x_min, avgX(curWindow), curWindow->y_min, avgY(curWindow));
+    }
     else if (b->x < x_cen && b->y >= y_cen)
+    {
         next = &cur->nw;
+        newWind = new window(curWindow->x_min, avgX(curWindow), avgY(curWindow), curWindow->y_max);
+    }
     else if (b->x >= x_cen && b->y < y_cen)
+    {
         next = &cur->se;
+        newWind = new window(avgX(curWindow), curWindow->x_max, curWindow->y_min, avgY(curWindow));
+    }
     else if (b->x >= x_cen && b->y >= y_cen)
+    {
         next = &cur->ne;
+        newWind = new window(avgX(curWindow), curWindow->x_max, avgY(curWindow), curWindow->y_max);
+    }
     else
     {
         std::cerr << "should fit in a quadrant" << std::endl;
@@ -74,6 +105,7 @@ void quadtree::addNode(node *cur, body *b)
 
     if (*next)
     {
+        delete newWind;
         if ((*next)->type == BODY)
         {
             auto tmpBody = (*next)->self_body;
@@ -86,12 +118,6 @@ void quadtree::addNode(node *cur, body *b)
     else
     {
         *next = new node(b);
+        (*next)->self_window = newWind;
     }
 }
-
-// double x_cen, y_cen;
-// std::tie(x_cen, y_cen) = wind->getCenter();
-// root->nw = new node(new window(wind->x_min, x_cen, y_cen, wind->y_max));
-// root->ne = new node(new window(x_cen, wind->x_max, y_cen, wind->y_max));
-// root->sw = new node(new window(wind->x_min, x_cen, wind->y_min, y_cen));
-// root->se = new node(new window(x_cen, wind->x_max, wind->y_min, y_cen));

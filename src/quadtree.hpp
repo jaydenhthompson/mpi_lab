@@ -1,5 +1,6 @@
 #include <vector>
 #include <tuple>
+#include <fstream>
 
 class body
 {
@@ -18,6 +19,8 @@ public:
           y(0),
           vx(0),
           vy(0) {}
+
+    void readIn(std::ifstream &in);
 };
 
 class window
