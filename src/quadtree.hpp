@@ -34,7 +34,8 @@ public:
     std::tuple<double, double> getCenter();
 };
 
-enum node_type {
+enum node_type
+{
     BODY,
     WINDOW
 };
@@ -51,15 +52,16 @@ public:
     node *se;
 
     node();
-    node(body*);
-    node(window*);
+    node(body *);
+    node(window *);
 };
 
 class quadtree
 {
 public:
-    quadtree(std::vector<body*>, window*);
+    quadtree(std::vector<body *>, window *);
+
 private:
     node *root;
-    void addNode(body*);
+    void addNode(node *, body *);
 };

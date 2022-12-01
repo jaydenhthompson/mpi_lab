@@ -37,24 +37,55 @@ quadtree::quadtree(std::vector<body*> init, window *wind)
 {
     root = new node(wind);
     root->self_body = new body();
-    std::tie(root->self_body->x, root->self_body->y) = wind->getCenter();
     for(auto& e : init) 
     {
-        addNode(e);
+        addNode(root, e);
     }
 }
 
-void quadtree::addNode(body* b)
+void quadtree::addNode(node *cur, body *b)
 {
-    if (!b) {
+    if (!b)
+    {
         std::cerr << "unexpected null body" << std::endl;
         exit(1);
     }
-    node* cur = this->root;
-    while(cur) 
-    {
-        cur->self_body->mass += b->mass;
 
+    if(!cur) return;
+
+    cur->self_body->mass += b->mass;
+    double x_cen, y_cen;
+    std::tie(x_cen, y_cen) = cur->self_window->getCenter();
+
+    node **next = nullptr;
+    if (b->x < x_cen && b->y < y_cen)
+        next = &cur->sw;
+    else if (b->x < x_cen && b->y >= y_cen)
+        next = &cur->nw;
+    else if (b->x >= x_cen && b->y < y_cen)
+        next = &cur->se;
+    else if (b->x >= x_cen && b->y >= y_cen)
+        next = &cur->ne;
+    else
+    {
+        std::cerr << "should fit in a quadrant" << std::endl;
+        exit(1);
+    }
+
+    if (*next)
+    {
+        if ((*next)->type == BODY)
+        {
+            auto tmpBody = (*next)->self_body;
+            (*next)->type = WINDOW;
+            (*next)->self_body = new body();
+            addNode(*next, tmpBody);
+        }
+        addNode(*next, b);
+    }
+    else
+    {
+        *next = new node(b);
     }
 }
 
