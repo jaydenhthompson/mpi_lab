@@ -5,7 +5,7 @@ BASE = -std=c++17 -Wall -Werror -lglfw3 -lGL -lX11 -lXrandr -lXi -ldl -lpthread
 OPTS = -O3
 DEBUG_OPTS = -g
 
-EXEC = bin/barnes_hut
+EXEC = bin/nbody
 
 all: clean compile
 
