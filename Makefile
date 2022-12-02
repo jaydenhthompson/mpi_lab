@@ -1,7 +1,7 @@
 CC = mpic++ 
 SRCS = ./src/*.cpp
 INC = ./src/
-BASE = -std=c++17 -Wall -Werror -lglfw3 -lGL -lX11 -lXrandr -lXi -ldl -lpthread
+BASE = -std=c++17 -Wall -Werror -lglfw3 -lGL -lX11 -lXrandr -lXi -ldl -lpthread -lGLEW
 OPTS = -O3
 DEBUG_OPTS = -g
 

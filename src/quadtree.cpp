@@ -37,7 +37,7 @@ node::node(body * b)
 
 node::node(window *w)
 {
-    this->type = BODY;
+    this->type = WINDOW;
     this->self_body = nullptr;
     this->self_window = w;
     node();
