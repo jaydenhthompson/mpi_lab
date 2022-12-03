@@ -31,17 +31,20 @@ int main(int argc, char** argv)
         for (int i = 0; i < opts.steps; i++) {
             window wind(0, 4, 0, 4);
             quadtree tree(bodies, wind);
+            for (auto& e : bodies) {
+                tree.calcBody(e, opts.dt, opts.theta);
+            }
         }
     } else {
         auto work_size = num_bodies < num_processes ? num_processes
                                                     : num_bodies % num_processes == 0 ? num_bodies
                                                                                       : num_bodies + (num_processes - (num_bodies % num_processes));
-        std::vector<int> work(work_size, -1);
+        std::vector<body> work(work_size);
         for (int i = 0; i < num_bodies; i++) {
-            work[i] = i;
+            work[i] = bodies[i];
         }
         int per_proc = work_size / num_processes;
-        std::vector<int> my_work(per_proc);
+        std::vector<body> my_work(per_proc);
         MPI_Scatter(work.data(), per_proc, MPI_INT, my_work.data(), per_proc, MPI_INT, 0, MPI_COMM_WORLD);
 
         for (int i = 0; i < opts.steps; i++) {
@@ -59,6 +62,17 @@ int main(int argc, char** argv)
     auto end = MPI_Wtime();
     if (id == 0) {
         printf("%lf\n", end - start);
+        std::ofstream outfile(opts.out_file);
+        outfile << num_bodies << std::endl;
+        for (auto& e : bodies) {
+            outfile << e.index << " "
+                    << e.x << " "
+                    << e.y << " "
+                    << e.mass << " "
+                    << e.vx << " "
+                    << e.vy << " "
+                    << std::endl;
+        }
     }
 
     MPI_Finalize();
