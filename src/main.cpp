@@ -27,6 +27,12 @@ int main(int argc, char** argv)
         bodies[i].readIn(in);
     }
 
+    size_t work_size = num_bodies < num_processes ? num_processes
+                                                : num_bodies % num_processes == 0 ? num_bodies
+                                                                                  : num_bodies + (num_processes - (num_bodies % num_processes));
+    while (bodies.size() < work_size)
+        bodies.push_back(body());
+
     if (num_processes <= 1) {
         for (int i = 0; i < opts.steps; i++) {
             window wind(0, 4, 0, 4);
@@ -36,26 +42,18 @@ int main(int argc, char** argv)
             }
         }
     } else {
-        auto work_size = num_bodies < num_processes ? num_processes
-                                                    : num_bodies % num_processes == 0 ? num_bodies
-                                                                                      : num_bodies + (num_processes - (num_bodies % num_processes));
-        std::vector<body> work(work_size);
-        for (int i = 0; i < num_bodies; i++) {
-            work[i] = bodies[i];
-        }
         int per_proc = work_size / num_processes;
         std::vector<body> my_work(per_proc);
-        MPI_Scatter(work.data(), per_proc, MPI_INT, my_work.data(), per_proc, MPI_INT, 0, MPI_COMM_WORLD);
+        auto per_proc_bytes = per_proc * sizeof(body);
+        MPI_Scatter(bodies.data(), per_proc_bytes, MPI_BYTE, my_work.data(), per_proc_bytes, MPI_BYTE, 0, MPI_COMM_WORLD);
 
         for (int i = 0; i < opts.steps; i++) {
             window wind(0, 4, 0, 4);
             quadtree tree(bodies, wind);
-        }
-
-        if (id == 0) // parent
-        {
-        } else // child
-        {
+            for(auto & e : my_work){
+                tree.calcBody(e, opts.dt, opts.theta);
+            }
+            MPI_Allgather(my_work.data(), per_proc_bytes, MPI_BYTE, bodies.data(), per_proc_bytes, MPI_BYTE, MPI_COMM_WORLD);
         }
     }
 
@@ -65,13 +63,15 @@ int main(int argc, char** argv)
         std::ofstream outfile(opts.out_file);
         outfile << num_bodies << std::endl;
         for (auto& e : bodies) {
-            outfile << e.index << " "
-                    << e.x << " "
-                    << e.y << " "
-                    << e.mass << " "
-                    << e.vx << " "
-                    << e.vy << " "
-                    << std::endl;
+            if (e.index >= 0) {
+                outfile << e.index << " "
+                        << e.x << " "
+                        << e.y << " "
+                        << e.mass << " "
+                        << e.vx << " "
+                        << e.vy << " "
+                        << std::endl;
+            }
         }
     }
 
