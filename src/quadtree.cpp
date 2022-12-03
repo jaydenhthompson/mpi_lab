@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-void body::readIn(std::ifstream &in)
+void body::readIn(std::ifstream& in)
 {
     in >> this->index;
     in >> this->x;
@@ -35,7 +35,7 @@ node::node(body b)
     node();
 }
 
-node::node(window *w)
+node::node(window* w)
 {
     this->type = WINDOW;
     this->bod = body();
@@ -43,19 +43,19 @@ node::node(window *w)
     node();
 }
 
-quadtree::quadtree(std::vector<body>& init, window *wind)
+quadtree::quadtree(std::vector<body>& init, window* wind)
 {
     root = new node(wind);
-    for(auto& e : init) 
-    {
+    for (auto& e : init) {
         addNode(root, e);
     }
     calcCOM(root);
 }
 
-void quadtree::addNode(node *cur, body b)
+void quadtree::addNode(node* cur, body b)
 {
-    if(!cur) return;
+    if (!cur)
+        return;
 
     cur->bod.mass += b.mass;
     cur->bod.x += b.x;
@@ -63,70 +63,55 @@ void quadtree::addNode(node *cur, body b)
     double x_cen, y_cen;
     std::tie(x_cen, y_cen) = cur->wind->getCenter();
 
-    node **next = nullptr;
-    window * newWind = nullptr;
+    node** next = nullptr;
+    window* newWind = nullptr;
     auto curWindow = cur->wind;
 
-    auto avgX = [](window *w)
-    { return (w->x_max + w->x_min) / 2.0; };
-    
-    auto avgY = [](window *w)
-    { return (w->y_max + w->y_min) / 2.0; };
+    auto avgX = [](window* w) { return (w->x_max + w->x_min) / 2.0; };
 
-    if (b.x < x_cen && b.y < y_cen)
-    {
+    auto avgY = [](window* w) { return (w->y_max + w->y_min) / 2.0; };
+
+    if (b.x < x_cen && b.y < y_cen) {
         next = &cur->sw;
         newWind = new window(curWindow->x_min, avgX(curWindow), curWindow->y_min, avgY(curWindow));
-    }
-    else if (b.x < x_cen && b.y >= y_cen)
-    {
+    } else if (b.x < x_cen && b.y >= y_cen) {
         next = &cur->nw;
         newWind = new window(curWindow->x_min, avgX(curWindow), avgY(curWindow), curWindow->y_max);
-    }
-    else if (b.x >= x_cen && b.y < y_cen)
-    {
+    } else if (b.x >= x_cen && b.y < y_cen) {
         next = &cur->se;
         newWind = new window(avgX(curWindow), curWindow->x_max, curWindow->y_min, avgY(curWindow));
-    }
-    else if (b.x >= x_cen && b.y >= y_cen)
-    {
+    } else if (b.x >= x_cen && b.y >= y_cen) {
         next = &cur->ne;
         newWind = new window(avgX(curWindow), curWindow->x_max, avgY(curWindow), curWindow->y_max);
-    }
-    else
-    {
+    } else {
         std::cerr << "should fit in a quadrant" << std::endl;
         exit(1);
     }
 
-    if (*next)
-    {
+    if (*next) {
         delete newWind;
-        if ((*next)->type == BODY)
-        {
+        if ((*next)->type == BODY) {
             auto tmpBody = (*next)->bod;
             (*next)->type = WINDOW;
             (*next)->bod = body();
             addNode(*next, tmpBody);
         }
         addNode(*next, b);
-    }
-    else
-    {
+    } else {
         *next = new node(b);
         (*next)->wind = newWind;
     }
 }
 
-std::pair<double, double> quadtree::calcCOM(node *n)
+std::pair<double, double> quadtree::calcCOM(node* n)
 {
-    if (!n) return std::make_pair(0.0, 0.0);
+    if (!n)
+        return std::make_pair(0.0, 0.0);
     auto ne = calcCOM(n->ne);
     auto nw = calcCOM(n->nw);
     auto se = calcCOM(n->se);
     auto sw = calcCOM(n->sw);
-    if (n->type == WINDOW)
-    {
+    if (n->type == WINDOW) {
         n->bod.x = (ne.first + nw.first + se.first + sw.first) / n->bod.mass;
         n->bod.y = (ne.first + nw.first + se.first + sw.first) / n->bod.mass;
     }
