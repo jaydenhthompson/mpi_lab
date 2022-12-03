@@ -27,22 +27,27 @@ int main(int argc, char** argv)
         bodies[i].readIn(in);
     }
 
-    window* wind = new window(0, 4, 0, 4);
-    quadtree tree(bodies, wind);
-
-    auto work_size = num_bodies < num_processes ? num_processes
-                                                : num_bodies % num_processes == 0 ? num_bodies
-                                                                                  : num_bodies + (num_processes - (num_bodies % num_processes));
-    std::vector<int> work(work_size, -1);
-    for (int i = 0; i < num_bodies; i++) {
-        work[i] = i;
-    }
-
     if (num_processes <= 1) {
+        for (int i = 0; i < opts.steps; i++) {
+            window wind(0, 4, 0, 4);
+            quadtree tree(bodies, wind);
+        }
     } else {
+        auto work_size = num_bodies < num_processes ? num_processes
+                                                    : num_bodies % num_processes == 0 ? num_bodies
+                                                                                      : num_bodies + (num_processes - (num_bodies % num_processes));
+        std::vector<int> work(work_size, -1);
+        for (int i = 0; i < num_bodies; i++) {
+            work[i] = i;
+        }
         int per_proc = work_size / num_processes;
         std::vector<int> my_work(per_proc);
         MPI_Scatter(work.data(), per_proc, MPI_INT, my_work.data(), per_proc, MPI_INT, 0, MPI_COMM_WORLD);
+
+        for (int i = 0; i < opts.steps; i++) {
+            window wind(0, 4, 0, 4);
+            quadtree tree(bodies, wind);
+        }
 
         if (id == 0) // parent
         {

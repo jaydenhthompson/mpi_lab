@@ -1,4 +1,5 @@
 #include <fstream>
+#include <memory>
 #include <tuple>
 #include <vector>
 
@@ -51,41 +52,25 @@ class node {
 public:
     node_type type;
     body bod;
-    window* wind;
-    node* nw;
-    node* ne;
-    node* sw;
-    node* se;
+    std::shared_ptr<window> wind;
+    std::shared_ptr<node> nw;
+    std::shared_ptr<node> ne;
+    std::shared_ptr<node> sw;
+    std::shared_ptr<node> se;
 
     node();
     node(body);
-    node(window*);
-    ~node()
-    {
-        delete this->wind;
-    }
+    node(window);
 };
 
 class quadtree {
 public:
-    quadtree(std::vector<body>&, window*);
-    ~quadtree()
-    {
-        this->del(root);
-    }
+    quadtree(std::vector<body>&, window);
+    //void update(const std::vector<body>&);
 
 private:
-    node* root;
-    void addNode(node*, body);
-    std::pair<double, double> calcCOM(node*);
-    void del(node* n)
-    {
-        if (!n)
-            return;
-        del(n->nw);
-        del(n->ne);
-        del(n->se);
-        del(n->sw);
-        delete n;
-    }
+    std::shared_ptr<node> root;
+    std::pair<double, double> calcCOM(std::shared_ptr<node>);
+    body calcBody(body& b, double time);
+    void addNode(std::shared_ptr<node>, body);
 };

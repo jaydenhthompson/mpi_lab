@@ -35,61 +35,58 @@ node::node(body b)
     node();
 }
 
-node::node(window* w)
+node::node(window w)
 {
     this->type = WINDOW;
     this->bod = body();
-    this->wind = w;
+    this->wind = std::make_shared<window>(w);
     node();
 }
 
-quadtree::quadtree(std::vector<body>& init, window* wind)
+quadtree::quadtree(std::vector<body>& init, window wind)
 {
-    root = new node(wind);
+    root = std::make_shared<node>(wind);
     for (auto& e : init) {
         addNode(root, e);
     }
     calcCOM(root);
 }
 
-void quadtree::addNode(node* cur, body b)
+void quadtree::addNode(std::shared_ptr<node> cur, body b)
 {
     if (!cur)
         return;
 
     cur->bod.mass += b.mass;
-    cur->bod.x += b.x;
-    cur->bod.y += b.y;
     double x_cen, y_cen;
     std::tie(x_cen, y_cen) = cur->wind->getCenter();
 
-    node** next = nullptr;
-    window* newWind = nullptr;
+    std::shared_ptr<node>* next = nullptr;
+    std::shared_ptr<window> newWind = nullptr;
     auto curWindow = cur->wind;
 
-    auto avgX = [](window* w) { return (w->x_max + w->x_min) / 2.0; };
+    auto avgX = [](std::shared_ptr<window> w) { return (w->x_max + w->x_min) / 2.0; };
 
-    auto avgY = [](window* w) { return (w->y_max + w->y_min) / 2.0; };
+    auto avgY = [](std::shared_ptr<window> w) { return (w->y_max + w->y_min) / 2.0; };
 
     if (b.x < x_cen && b.y < y_cen) {
         next = &cur->sw;
-        newWind = new window(curWindow->x_min, avgX(curWindow), curWindow->y_min, avgY(curWindow));
+        newWind = std::make_shared<window>(curWindow->x_min, avgX(curWindow), curWindow->y_min, avgY(curWindow));
     } else if (b.x < x_cen && b.y >= y_cen) {
         next = &cur->nw;
-        newWind = new window(curWindow->x_min, avgX(curWindow), avgY(curWindow), curWindow->y_max);
+        newWind = std::make_shared<window>(curWindow->x_min, avgX(curWindow), avgY(curWindow), curWindow->y_max);
     } else if (b.x >= x_cen && b.y < y_cen) {
         next = &cur->se;
-        newWind = new window(avgX(curWindow), curWindow->x_max, curWindow->y_min, avgY(curWindow));
+        newWind = std::make_shared<window>(avgX(curWindow), curWindow->x_max, curWindow->y_min, avgY(curWindow));
     } else if (b.x >= x_cen && b.y >= y_cen) {
         next = &cur->ne;
-        newWind = new window(avgX(curWindow), curWindow->x_max, avgY(curWindow), curWindow->y_max);
+        newWind = std::make_shared<window>(avgX(curWindow), curWindow->x_max, avgY(curWindow), curWindow->y_max);
     } else {
         std::cerr << "should fit in a quadrant" << std::endl;
         exit(1);
     }
 
     if (*next) {
-        delete newWind;
         if ((*next)->type == BODY) {
             auto tmpBody = (*next)->bod;
             (*next)->type = WINDOW;
@@ -98,12 +95,12 @@ void quadtree::addNode(node* cur, body b)
         }
         addNode(*next, b);
     } else {
-        *next = new node(b);
+        *next = std::make_shared<node>(b);
         (*next)->wind = newWind;
     }
 }
 
-std::pair<double, double> quadtree::calcCOM(node* n)
+std::pair<double, double> quadtree::calcCOM(std::shared_ptr<node> n)
 {
     if (!n)
         return std::make_pair(0.0, 0.0);
@@ -117,3 +114,48 @@ std::pair<double, double> quadtree::calcCOM(node* n)
     }
     return std::make_pair(n->bod.x * n->bod.mass, n->bod.y * n->bod.mass);
 }
+
+body quadtree::calcBody(body& b, double time)
+{
+    //const double G = 0.0001;
+    //const double rlim = 0.03;
+    //TODO
+    return body();
+}
+
+/*void quadtree::update(const std::vector<body>& vect)
+{
+    for (auto& e : vect) {
+        removeBody(this->root, e.index);
+        addNode(this->root, e);
+    }
+    calcCOM(root);
+}
+
+double quadtree::removeBody(std::shared_ptr<node> cur, int index)
+{
+    if (!cur)
+        return 0;
+    std::shared_ptr<node>* found = nullptr;
+    if (cur->ne->bod.index == index)
+        found = &cur->ne;
+    if (cur->nw->bod.index == index)
+        found = &cur->nw;
+    if (cur->sw->bod.index == index)
+        found = &cur->sw;
+    if (cur->se->bod.index == index)
+        found = &cur->se;
+    if (found) {
+        auto mass = (*found)->bod.mass;
+        (*found) = nullptr;
+        cur->bod.mass -= mass;
+        return mass;
+    }
+    double toRemove = 0.0;
+    toRemove += removeBody(cur->ne, index);
+    toRemove += removeBody(cur->nw, index);
+    toRemove += removeBody(cur->sw, index);
+    toRemove += removeBody(cur->se, index);
+    cur->bod.mass -= toRemove;
+    return toRemove;
+}*/
